@@ -4,15 +4,15 @@
  * Enemy наслідується від GameObject, тому має координати, розмір,
  * колір і базовий метод відображення на екрані.
  *
- * На цьому етапі ворог уже вміє рухатися до гравця.
- * Це базова механіка для survival arena гри.
+ * Ворог рухається до гравця, може завдавати шкоду
+ * і має власне здоров'я.
  */
 public class Enemy extends GameObject {
 
     private final Player player;
 
     // Поточні характеристики ворога.
-    // Вони не є константами, бо різні вороги можуть мати різні параметри.
+    // Вони не є константами, бо різні типи ворогів можуть мати різні параметри.
     private int speed;
     private int damage;
     private int health;
@@ -34,6 +34,7 @@ public class Enemy extends GameObject {
         );
 
         this.player = player;
+
         this.speed = GameConstants.ENEMY_BASE_SPEED;
         this.damage = GameConstants.ENEMY_BASE_DAMAGE;
         this.health = GameConstants.ENEMY_BASE_HEALTH;
@@ -53,7 +54,6 @@ public class Enemy extends GameObject {
      * Рухає ворога у напрямку до центру гравця.
      *
      * Для простоти ворог рухається окремо по осі X і по осі Y.
-     * У майбутньому цей рух можна покращити, щоб він був більш плавним.
      */
     private void moveTowardsPlayer() {
         if (x < player.getCenterX()) {
@@ -71,6 +71,31 @@ public class Enemy extends GameObject {
         if (y > player.getCenterY()) {
             y -= speed;
         }
+    }
+
+    /**
+     * Завдає шкоду ворогу.
+     *
+     * Якщо здоров'я падає до нуля або нижче,
+     * ворог вважається переможеним і буде видалений зі сцени.
+     *
+     * @param damageAmount кількість отриманої шкоди
+     */
+    public void takeDamage(int damageAmount) {
+        health -= damageAmount;
+
+        if (health < 0) {
+            health = 0;
+        }
+
+        System.out.println("Enemy HP: " + health);
+    }
+
+    /**
+     * Перевіряє, чи ворог ще живий.
+     */
+    public boolean isAlive() {
+        return health > 0;
     }
 
     /**

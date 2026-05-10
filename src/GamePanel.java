@@ -13,13 +13,14 @@ import java.util.List;
  * GamePanel відповідає за ігрове поле, запуск ігрового циклу,
  * оновлення об'єктів та їх відображення на екрані.
  *
- * Важливо: сама логіка гравця і ворогів винесена в окремі класи.
+ * Важливо: сама логіка гравця, ворогів і атаки винесена в окремі класи.
  * Це робить код більш зрозумілим і відповідає принципам ООП.
  */
 public class GamePanel extends JPanel {
 
     private final InputHandler inputHandler;
     private Player player;
+    private MeleeAttack meleeAttack;
     private final List<Enemy> enemies;
 
     private final Timer gameTimer;
@@ -28,7 +29,7 @@ public class GamePanel extends JPanel {
     private boolean gameOver;
 
     /**
-     * Створює ігрову панель, гравця, ворогів та запускає ігровий цикл.
+     * Створює ігрову панель, гравця, ворогів, атаку та запускає ігровий цикл.
      */
     public GamePanel() {
         setPreferredSize(new Dimension(GameConstants.WINDOW_WIDTH, GameConstants.WINDOW_HEIGHT));
@@ -41,6 +42,7 @@ public class GamePanel extends JPanel {
         addKeyListener(inputHandler);
 
         player = new Player(380, 280, inputHandler);
+        meleeAttack = new MeleeAttack(player);
 
         enemies = new ArrayList<>();
         createEnemies();
@@ -79,13 +81,15 @@ public class GamePanel extends JPanel {
      */
     private void updateGame() {
         player.update();
+        meleeAttack.update();
 
         for (Enemy enemy : enemies) {
             enemy.update();
         }
 
         separateEnemies();
-        checkCollisions();
+        checkPlayerEnemyCollisions();
+        checkAttackHits();
         checkGameOver();
     }
 
@@ -143,14 +147,37 @@ public class GamePanel extends JPanel {
     /**
      * Перевіряє зіткнення між гравцем і ворогами.
      *
-     * При зіткненні гравець отримує шкоду від ворога.
+     * Якщо ворог торкається гравця, гравець отримує шкоду.
      */
-    private void checkCollisions() {
+    private void checkPlayerEnemyCollisions() {
         for (Enemy enemy : enemies) {
             if (player.intersects(enemy)) {
                 player.takeDamage(enemy.getDamage());
             }
         }
+    }
+
+    /**
+     * Перевіряє, чи ближня атака гравця зачепила ворогів.
+     *
+     * За один замах шкода наноситься один раз.
+     * Після цього мертві вороги видаляються зі списку.
+     */
+    private void checkAttackHits() {
+        if (!meleeAttack.canDamage()) {
+            return;
+        }
+
+        for (Enemy enemy : enemies) {
+            if (meleeAttack.intersects(enemy)) {
+                enemy.takeDamage(meleeAttack.getDamage());
+            }
+        }
+
+        meleeAttack.markDamageApplied();
+
+        // Видаляємо ворогів, здоров'я яких стало нульовим.
+        enemies.removeIf(enemy -> !enemy.isAlive());
     }
 
     /**
@@ -186,6 +213,7 @@ public class GamePanel extends JPanel {
         inputHandler.resetMovement();
 
         player = new Player(380, 280, inputHandler);
+        meleeAttack = new MeleeAttack(player);
 
         enemies.clear();
         createEnemies();
@@ -194,7 +222,7 @@ public class GamePanel extends JPanel {
     }
 
     /**
-     * Малює арену, гравця, ворогів та інтерфейс.
+     * Малює арену, гравця, ворогів, атаку та інтерфейс.
      *
      * Метод автоматично викликається Swing після repaint().
      */
@@ -228,13 +256,16 @@ public class GamePanel extends JPanel {
         }
 
         player.draw(g);
+
+        // Малюємо атаку поверх гравця і ворогів, щоб її було видно.
+        meleeAttack.draw(g);
     }
 
     /**
      * Малює простий ігровий інтерфейс поверх арени.
      *
      * HUD показує важливу інформацію для гравця:
-     * поточне здоров'я, максимальне здоров'я та інші дані в майбутньому.
+     * поточне здоров'я, максимальне здоров'я та кількість ворогів.
      */
     private void drawHud(Graphics g) {
         g.setColor(Color.WHITE);
@@ -242,6 +273,9 @@ public class GamePanel extends JPanel {
 
         String healthText = "HP: " + player.getCurrentHealth() + "/" + player.getMaxHealth();
         g.drawString(healthText, 20, 30);
+
+        String enemiesText = "Enemies: " + enemies.size();
+        g.drawString(enemiesText, 20, 55);
     }
 
     /**
