@@ -6,14 +6,15 @@ import java.awt.Graphics;
  * Player наслідується від GameObject, тому має базові властивості:
  * координати, розмір, колір і можливість малюватися на екрані.
  *
- * Додатково цей клас відповідає за рух гравця відповідно до натиснутих клавіш.
+ * Додатково цей клас відповідає за рух гравця, здоров'я
+ * та напрямок, у який гравець зараз дивиться.
  */
 public class Player extends GameObject {
 
     private final InputHandler inputHandler;
 
     // Поточна швидкість гравця.
-    // Вона бере базове значення, але в майбутньому може змінюватися бафами або прокачкою.
+    // У майбутньому вона може змінюватися через бафи або прокачку.
     private int speed;
 
     // Поточне та максимальне здоров'я гравця.
@@ -21,9 +22,11 @@ public class Player extends GameObject {
     private int currentHealth;
 
     // Час останнього отримання шкоди.
-    // Потрібен, щоб вороги не завдавали шкоду кожен кадр.
     private long lastDamageTime;
 
+    // Напрямок, у який дивиться гравець.
+    // Від нього залежить, де з'явиться зона атаки.
+    private Direction facingDirection;
 
     /**
      * Створює гравця у заданій позиції.
@@ -42,10 +45,14 @@ public class Player extends GameObject {
         );
 
         this.inputHandler = inputHandler;
+
         this.speed = GameConstants.PLAYER_BASE_SPEED;
         this.maxHealth = GameConstants.PLAYER_BASE_MAX_HEALTH;
         this.currentHealth = maxHealth;
         this.lastDamageTime = 0;
+
+        // За замовчуванням гравець дивиться праворуч.
+        this.facingDirection = Direction.RIGHT;
     }
 
     /**
@@ -61,22 +68,29 @@ public class Player extends GameObject {
 
     /**
      * Змінює координати гравця залежно від натиснутих клавіш.
+     *
+     * Також оновлює напрямок погляду гравця,
+     * щоб атака з'являлася з правильного боку.
      */
     private void move() {
         if (inputHandler.isMoveUp()) {
             y -= speed;
+            facingDirection = Direction.UP;
         }
 
         if (inputHandler.isMoveDown()) {
             y += speed;
+            facingDirection = Direction.DOWN;
         }
 
         if (inputHandler.isMoveLeft()) {
             x -= speed;
+            facingDirection = Direction.LEFT;
         }
 
         if (inputHandler.isMoveRight()) {
             x += speed;
+            facingDirection = Direction.RIGHT;
         }
     }
 
@@ -150,12 +164,17 @@ public class Player extends GameObject {
 
     /**
      * Перевіряє, чи гравець ще живий.
-     *
-     * Якщо здоров'я більше нуля — гра продовжується.
-     * Якщо здоров'я дорівнює нулю — можна завершувати ігрову сесію.
      */
     public boolean isAlive() {
         return currentHealth > 0;
     }
 
+    /**
+     * Повертає напрямок, у який зараз дивиться гравець.
+     *
+     * Цей напрямок використовується для позиціонування атаки.
+     */
+    public Direction getFacingDirection() {
+        return facingDirection;
+    }
 }
