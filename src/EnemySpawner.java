@@ -15,6 +15,7 @@ public class EnemySpawner {
     private final List<Enemy> enemies;
     private final Player player;
     private final DifficultyManager difficultyManager;
+    private final ProceduralEventManager proceduralEventManager;
     private final Random random;
 
     // Час останнього створення ворога.
@@ -25,11 +26,19 @@ public class EnemySpawner {
      *
      * @param enemies список активних ворогів на арені
      * @param player гравець, якого будуть переслідувати нові вороги
+     * @param difficultyManager менеджер складності, який визначає базову частоту спавну
+     * @param proceduralEventManager менеджер процедурних подій, який може тимчасово змінювати спавн
      */
-    public EnemySpawner(List<Enemy> enemies, Player player, DifficultyManager difficultyManager) {
+    public EnemySpawner(
+            List<Enemy> enemies,
+            Player player,
+            DifficultyManager difficultyManager,
+            ProceduralEventManager proceduralEventManager
+    ) {
         this.enemies = enemies;
         this.player = player;
         this.difficultyManager = difficultyManager;
+        this.proceduralEventManager = proceduralEventManager;
         this.random = new Random();
         this.lastSpawnTime = System.currentTimeMillis();
     }
@@ -42,10 +51,26 @@ public class EnemySpawner {
     public void update() {
         long currentTime = System.currentTimeMillis();
 
-        if (currentTime - lastSpawnTime >= difficultyManager.getCurrentEnemySpawnInterval()) {
+        int spawnInterval = getCurrentSpawnInterval();
+
+        if (currentTime - lastSpawnTime >= spawnInterval) {
             spawnEnemy();
             lastSpawnTime = currentTime;
         }
+    }
+
+    /**
+     * Повертає поточний інтервал появи ворогів.
+     *
+     * У звичайному режимі інтервал залежить від складності.
+     * Під час події Enemy Rush використовується окремий коротший інтервал.
+     */
+    private int getCurrentSpawnInterval() {
+        if (proceduralEventManager.isEnemyRushActive()) {
+            return GameConstants.ENEMY_RUSH_SPAWN_INTERVAL;
+        }
+
+        return difficultyManager.getCurrentEnemySpawnInterval();
     }
 
     /**

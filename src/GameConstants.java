@@ -39,6 +39,12 @@ public class GameConstants {
     // Інтервал появи нового ворога у мілісекундах.
     public static final int ENEMY_BASE_SPAWN_INTERVAL = 2500;
 
+    // Параметри процедурної події Enemy Rush.
+    public static final int EVENT_FIRST_START_TIME = 20;
+    public static final int EVENT_INTERVAL = 45000;
+    public static final int EVENT_DURATION = 10000;
+    public static final int ENEMY_RUSH_SPAWN_INTERVAL = 600;
+
     // Затримка таймера у мілісекундах.
     // Значення 16 приблизно відповідає 60 оновленням на секунду.
     public static final int GAME_TIMER_DELAY = 16;

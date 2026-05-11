@@ -24,6 +24,7 @@ public class GamePanel extends JPanel {
     private EnemySpawner enemySpawner;
     private GameSession gameSession;
     private DifficultyManager difficultyManager;
+    private ProceduralEventManager proceduralEventManager;
     private final List<Enemy> enemies;
 
     private final Timer gameTimer;
@@ -51,11 +52,12 @@ public class GamePanel extends JPanel {
         meleeAttack = new MeleeAttack(player);
         gameSession = new GameSession();
         difficultyManager = new DifficultyManager(gameSession);
+        proceduralEventManager = new ProceduralEventManager(gameSession);
 
         enemies = new ArrayList<>();
         createEnemies();
 
-        enemySpawner = new EnemySpawner(enemies, player, difficultyManager);
+        enemySpawner = new EnemySpawner(enemies, player, difficultyManager, proceduralEventManager);
 
         gameState = GameState.RUNNING;
         godModeEnabled = false;
@@ -141,6 +143,7 @@ public class GamePanel extends JPanel {
     private void updateGame() {
         player.update();
         meleeAttack.update();
+        proceduralEventManager.update();
         enemySpawner.update();
 
         for (Enemy enemy : enemies) {
@@ -291,11 +294,12 @@ public class GamePanel extends JPanel {
         meleeAttack = new MeleeAttack(player);
         gameSession = new GameSession();
         difficultyManager = new DifficultyManager(gameSession);
+        proceduralEventManager = new ProceduralEventManager(gameSession);
 
         enemies.clear();
         createEnemies();
 
-        enemySpawner = new EnemySpawner(enemies, player, difficultyManager);
+        enemySpawner = new EnemySpawner(enemies, player, difficultyManager, proceduralEventManager);
         enemySpawner.reset();
 
         gameState = GameState.RUNNING;
@@ -372,6 +376,9 @@ public class GamePanel extends JPanel {
 
         String godModeText = "God Mode: " + (godModeEnabled ? "ON" : "OFF");
         g.drawString(godModeText, 20, 155);
+
+        String eventText = "Event: " + proceduralEventManager.getCurrentEventName();
+        g.drawString(eventText, 20, 180);
 
         String controlsText = "P - Pause | G - God Mode";
         g.drawString(controlsText, 20, GameConstants.WINDOW_HEIGHT - 20);
