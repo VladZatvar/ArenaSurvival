@@ -34,6 +34,8 @@ public class GameConstants {
     public static final int ENEMY_BASE_SPEED = 2;
     public static final int ENEMY_BASE_DAMAGE = 10;
     public static final int ENEMY_BASE_HEALTH = 30;
+    // Інтервал появи нового ворога у мілісекундах.
+    public static final int ENEMY_SPAWN_INTERVAL = 2500;
 
     // Затримка таймера у мілісекундах.
     // Значення 16 приблизно відповідає 60 оновленням на секунду.

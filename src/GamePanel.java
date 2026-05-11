@@ -21,6 +21,7 @@ public class GamePanel extends JPanel {
     private final InputHandler inputHandler;
     private Player player;
     private MeleeAttack meleeAttack;
+    private EnemySpawner enemySpawner;
     private final List<Enemy> enemies;
 
     private final Timer gameTimer;
@@ -46,6 +47,8 @@ public class GamePanel extends JPanel {
 
         enemies = new ArrayList<>();
         createEnemies();
+
+        enemySpawner = new EnemySpawner(enemies, player);
 
         gameOver = false;
 
@@ -82,6 +85,7 @@ public class GamePanel extends JPanel {
     private void updateGame() {
         player.update();
         meleeAttack.update();
+        enemySpawner.update();
 
         for (Enemy enemy : enemies) {
             enemy.update();
@@ -217,6 +221,9 @@ public class GamePanel extends JPanel {
 
         enemies.clear();
         createEnemies();
+
+        enemySpawner = new EnemySpawner(enemies, player);
+        enemySpawner.reset();
 
         gameOver = false;
     }
