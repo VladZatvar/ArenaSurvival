@@ -22,6 +22,7 @@ public class GamePanel extends JPanel {
     private Player player;
     private MeleeAttack meleeAttack;
     private EnemySpawner enemySpawner;
+    private GameSession gameSession;
     private final List<Enemy> enemies;
 
     private final Timer gameTimer;
@@ -44,9 +45,9 @@ public class GamePanel extends JPanel {
 
         player = new Player(380, 280, inputHandler);
         meleeAttack = new MeleeAttack(player);
+        gameSession = new GameSession();
 
         enemies = new ArrayList<>();
-        createEnemies();
 
         enemySpawner = new EnemySpawner(enemies, player);
 
@@ -180,6 +181,19 @@ public class GamePanel extends JPanel {
 
         meleeAttack.markDamageApplied();
 
+        // Рахуємо переможених ворогів перед видаленням зі списку.
+        int defeatedEnemies = 0;
+
+        for (Enemy enemy : enemies) {
+            if (!enemy.isAlive()) {
+                defeatedEnemies++;
+            }
+        }
+
+        for (int i = 0; i < defeatedEnemies; i++) {
+            gameSession.addKill();
+        }
+
         // Видаляємо ворогів, здоров'я яких стало нульовим.
         enemies.removeIf(enemy -> !enemy.isAlive());
     }
@@ -218,6 +232,7 @@ public class GamePanel extends JPanel {
 
         player = new Player(380, 280, inputHandler);
         meleeAttack = new MeleeAttack(player);
+        gameSession = new GameSession();
 
         enemies.clear();
         createEnemies();
@@ -283,6 +298,12 @@ public class GamePanel extends JPanel {
 
         String enemiesText = "Enemies: " + enemies.size();
         g.drawString(enemiesText, 20, 55);
+
+        String killsText = "Kills: " + gameSession.getKillCount();
+        g.drawString(killsText, 20, 80);
+
+        String timeText = "Time: " + gameSession.getFormattedSurvivalTime();
+        g.drawString(timeText, 20, 105);
     }
 
     /**
