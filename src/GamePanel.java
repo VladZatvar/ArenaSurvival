@@ -23,6 +23,7 @@ public class GamePanel extends JPanel {
     private MeleeAttack meleeAttack;
     private EnemySpawner enemySpawner;
     private GameSession gameSession;
+    private DifficultyManager difficultyManager;
     private final List<Enemy> enemies;
 
     private final Timer gameTimer;
@@ -46,10 +47,12 @@ public class GamePanel extends JPanel {
         player = new Player(380, 280, inputHandler);
         meleeAttack = new MeleeAttack(player);
         gameSession = new GameSession();
+        difficultyManager = new DifficultyManager(gameSession);
 
         enemies = new ArrayList<>();
+        createEnemies();
 
-        enemySpawner = new EnemySpawner(enemies, player);
+        enemySpawner = new EnemySpawner(enemies, player, difficultyManager);
 
         gameOver = false;
 
@@ -233,11 +236,12 @@ public class GamePanel extends JPanel {
         player = new Player(380, 280, inputHandler);
         meleeAttack = new MeleeAttack(player);
         gameSession = new GameSession();
+        difficultyManager = new DifficultyManager(gameSession);
 
         enemies.clear();
         createEnemies();
 
-        enemySpawner = new EnemySpawner(enemies, player);
+        enemySpawner = new EnemySpawner(enemies, player, difficultyManager);
         enemySpawner.reset();
 
         gameOver = false;
@@ -304,6 +308,9 @@ public class GamePanel extends JPanel {
 
         String timeText = "Time: " + gameSession.getFormattedSurvivalTime();
         g.drawString(timeText, 20, 105);
+
+        String difficultyText = "Difficulty: " + difficultyManager.getDifficultyName();
+        g.drawString(difficultyText, 20, 130);
     }
 
     /**
