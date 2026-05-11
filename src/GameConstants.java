@@ -28,6 +28,8 @@ public class GameConstants {
     public static final int PLAYER_ATTACK_DURATION = 160;
     public static final int PLAYER_ATTACK_RANGE = 70;
     public static final int PLAYER_ATTACK_WIDTH = 55;
+    // Посилена шкода для службового режиму God Mode.
+    public static final int GOD_MODE_ATTACK_DAMAGE = 9999;
 
     // Базові параметри ворогів.
     public static final int ENEMY_SIZE = 35;

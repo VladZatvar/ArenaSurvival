@@ -19,6 +19,12 @@ public class InputHandler implements KeyListener {
     // Прапорець запиту на перезапуск гри.
     private boolean restartPressed;
 
+    // Прапорець запиту на паузу або продовження гри.
+    private boolean pausePressed;
+
+    // Прапорець запиту на увімкнення або вимкнення God Mode.
+    private boolean godModePressed;
+
     /**
      * Викликається, коли користувач натискає клавішу.
      */
@@ -45,6 +51,15 @@ public class InputHandler implements KeyListener {
         if (key == KeyEvent.VK_R) {
             restartPressed = true;
         }
+
+        if (key == KeyEvent.VK_P) {
+            pausePressed = true;
+        }
+
+        if (key == KeyEvent.VK_G) {
+            godModePressed = true;
+        }
+
     }
 
     /**
@@ -118,5 +133,35 @@ public class InputHandler implements KeyListener {
         moveDown = false;
         moveLeft = false;
         moveRight = false;
+    }
+
+    /**
+     * Перевіряє, чи була натиснута клавіша паузи.
+     *
+     * Метод працює як одноразове читання:
+     * якщо P була натиснута, повертається true і прапорець скидається.
+     */
+    public boolean consumePausePressed() {
+        if (pausePressed) {
+            pausePressed = false;
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Перевіряє, чи була натиснута клавіша God Mode.
+     *
+     * Метод працює як одноразове читання:
+     * якщо G була натиснута, повертається true і прапорець скидається.
+     */
+    public boolean consumeGodModePressed() {
+        if (godModePressed) {
+            godModePressed = false;
+            return true;
+        }
+
+        return false;
     }
 }
