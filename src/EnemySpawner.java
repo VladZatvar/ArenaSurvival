@@ -14,6 +14,7 @@ public class EnemySpawner {
 
     private final List<Enemy> enemies;
     private final Player player;
+    private final DifficultyManager difficultyManager;
     private final Random random;
 
     // Час останнього створення ворога.
@@ -25,9 +26,10 @@ public class EnemySpawner {
      * @param enemies список активних ворогів на арені
      * @param player гравець, якого будуть переслідувати нові вороги
      */
-    public EnemySpawner(List<Enemy> enemies, Player player) {
+    public EnemySpawner(List<Enemy> enemies, Player player, DifficultyManager difficultyManager) {
         this.enemies = enemies;
         this.player = player;
+        this.difficultyManager = difficultyManager;
         this.random = new Random();
         this.lastSpawnTime = System.currentTimeMillis();
     }
@@ -40,7 +42,7 @@ public class EnemySpawner {
     public void update() {
         long currentTime = System.currentTimeMillis();
 
-        if (currentTime - lastSpawnTime >= GameConstants.ENEMY_SPAWN_INTERVAL) {
+        if (currentTime - lastSpawnTime >= difficultyManager.getCurrentEnemySpawnInterval()) {
             spawnEnemy();
             lastSpawnTime = currentTime;
         }
