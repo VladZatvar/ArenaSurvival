@@ -13,8 +13,8 @@ import java.util.List;
  * GamePanel відповідає за ігрове поле, запуск ігрового циклу,
  * оновлення об'єктів та їх відображення на екрані.
  *
- * Важливо: сама логіка гравця, ворогів і атаки винесена в окремі класи.
- * Це робить код більш зрозумілим і відповідає принципам ООП.
+ * Також тут обробляються основні стани гри:
+ * гра триває, пауза або завершення сесії.
  */
 public class GamePanel extends JPanel {
 
@@ -28,8 +28,11 @@ public class GamePanel extends JPanel {
 
     private final Timer gameTimer;
 
-    // Прапорець, який показує, чи завершилася гра.
-    private boolean gameOver;
+    // Поточний стан гри: RUNNING, PAUSED або GAME_OVER.
+    private GameState gameState;
+
+    // Службовий режим для тестування ігрових механік.
+    private boolean godModeEnabled;
 
     /**
      * Створює ігрову панель, гравця, ворогів, атаку та запускає ігровий цикл.
@@ -54,13 +57,14 @@ public class GamePanel extends JPanel {
 
         enemySpawner = new EnemySpawner(enemies, player, difficultyManager);
 
-        gameOver = false;
+        gameState = GameState.RUNNING;
+        godModeEnabled = false;
 
         gameTimer = new Timer(GameConstants.GAME_TIMER_DELAY, e -> {
-            if (!gameOver) {
+            handleGlobalInput();
+
+            if (gameState == GameState.RUNNING) {
                 updateGame();
-            } else {
-                checkRestart();
             }
 
             repaint();
@@ -68,6 +72,54 @@ public class GamePanel extends JPanel {
 
         // Запускаємо таймер, який оновлює гру приблизно 60 разів на секунду.
         gameTimer.start();
+    }
+
+    /**
+     * Обробляє глобальні клавіші, які працюють незалежно від руху гравця.
+     *
+     * P — пауза або продовження гри.
+     * G — увімкнення або вимкнення God Mode.
+     * R — рестарт після Game Over.
+     */
+    private void handleGlobalInput() {
+        if (inputHandler.consumePausePressed()) {
+            togglePause();
+        }
+
+        if (inputHandler.consumeGodModePressed()) {
+            toggleGodMode();
+        }
+
+        if (gameState == GameState.GAME_OVER && inputHandler.consumeRestartPressed()) {
+            restartGame();
+        }
+    }
+
+    /**
+     * Перемикає гру між активним станом і паузою.
+     *
+     * Під час паузи ігрові об'єкти не оновлюються,
+     * а таймер виживання тимчасово зупиняється.
+     */
+    private void togglePause() {
+        if (gameState == GameState.RUNNING) {
+            gameState = GameState.PAUSED;
+            gameSession.pause();
+            inputHandler.resetMovement();
+        } else if (gameState == GameState.PAUSED) {
+            gameState = GameState.RUNNING;
+            gameSession.resume();
+        }
+    }
+
+    /**
+     * Вмикає або вимикає службовий режим God Mode.
+     *
+     * У цьому режимі гравець не отримує шкоду,
+     * а атака знищує ворогів з одного удару.
+     */
+    private void toggleGodMode() {
+        godModeEnabled = !godModeEnabled;
     }
 
     /**
@@ -155,9 +207,14 @@ public class GamePanel extends JPanel {
     /**
      * Перевіряє зіткнення між гравцем і ворогами.
      *
-     * Якщо ворог торкається гравця, гравець отримує шкоду.
+     * Якщо God Mode вимкнено, вороги можуть завдавати шкоду гравцю.
+     * Якщо God Mode увімкнено, гравець залишається невразливим.
      */
     private void checkPlayerEnemyCollisions() {
+        if (godModeEnabled) {
+            return;
+        }
+
         for (Enemy enemy : enemies) {
             if (player.intersects(enemy)) {
                 player.takeDamage(enemy.getDamage());
@@ -168,17 +225,23 @@ public class GamePanel extends JPanel {
     /**
      * Перевіряє, чи ближня атака гравця зачепила ворогів.
      *
-     * За один замах шкода наноситься один раз.
-     * Після цього мертві вороги видаляються зі списку.
+     * У звичайному режимі вороги отримують стандартну шкоду.
+     * У God Mode атака наносить дуже велику шкоду, щоб швидко тестувати гру.
      */
     private void checkAttackHits() {
         if (!meleeAttack.canDamage()) {
             return;
         }
 
+        int attackDamage = meleeAttack.getDamage();
+
+        if (godModeEnabled) {
+            attackDamage = GameConstants.GOD_MODE_ATTACK_DAMAGE;
+        }
+
         for (Enemy enemy : enemies) {
             if (meleeAttack.intersects(enemy)) {
-                enemy.takeDamage(meleeAttack.getDamage());
+                enemy.takeDamage(attackDamage);
             }
         }
 
@@ -204,23 +267,14 @@ public class GamePanel extends JPanel {
     /**
      * Перевіряє, чи потрібно завершити гру.
      *
-     * Якщо здоров'я гравця стало нульовим, гра переходить у стан Game Over.
+     * Якщо здоров'я гравця стало нульовим, гра переходить у стан Game Over,
+     * а таймер сесії фіксує остаточний час виживання.
      */
     private void checkGameOver() {
         if (!player.isAlive()) {
-            gameOver = true;
-        }
-    }
-
-    /**
-     * Перевіряє, чи користувач хоче перезапустити гру після Game Over.
-     *
-     * Якщо гра завершена і натиснуто клавішу R,
-     * створюється новий гравець, вороги та початковий стан гри.
-     */
-    private void checkRestart() {
-        if (inputHandler.consumeRestartPressed()) {
-            restartGame();
+            gameState = GameState.GAME_OVER;
+            gameSession.finish();
+            inputHandler.resetMovement();
         }
     }
 
@@ -228,7 +282,7 @@ public class GamePanel extends JPanel {
      * Перезапускає ігрову сесію.
      *
      * Метод повертає гравця у стартову позицію, очищає старих ворогів,
-     * створює нових ворогів і знімає стан Game Over.
+     * створює нових ворогів і повертає гру у стан RUNNING.
      */
     private void restartGame() {
         inputHandler.resetMovement();
@@ -244,7 +298,7 @@ public class GamePanel extends JPanel {
         enemySpawner = new EnemySpawner(enemies, player, difficultyManager);
         enemySpawner.reset();
 
-        gameOver = false;
+        gameState = GameState.RUNNING;
     }
 
     /**
@@ -260,7 +314,11 @@ public class GamePanel extends JPanel {
         drawGameObjects(g);
         drawHud(g);
 
-        if (gameOver) {
+        if (gameState == GameState.PAUSED) {
+            drawPauseMenu(g);
+        }
+
+        if (gameState == GameState.GAME_OVER) {
             drawGameOver(g);
         }
     }
@@ -291,7 +349,7 @@ public class GamePanel extends JPanel {
      * Малює простий ігровий інтерфейс поверх арени.
      *
      * HUD показує важливу інформацію для гравця:
-     * поточне здоров'я, максимальне здоров'я та кількість ворогів.
+     * здоров'я, кількість ворогів, час, складність і God Mode.
      */
     private void drawHud(Graphics g) {
         g.setColor(Color.WHITE);
@@ -311,6 +369,40 @@ public class GamePanel extends JPanel {
 
         String difficultyText = "Difficulty: " + difficultyManager.getDifficultyName();
         g.drawString(difficultyText, 20, 130);
+
+        String godModeText = "God Mode: " + (godModeEnabled ? "ON" : "OFF");
+        g.drawString(godModeText, 20, 155);
+
+        String controlsText = "P - Pause | G - God Mode";
+        g.drawString(controlsText, 20, GameConstants.WINDOW_HEIGHT - 20);
+    }
+
+    /**
+     * Малює повідомлення паузи.
+     *
+     * Під час паузи ігровий світ не оновлюється,
+     * а час виживання тимчасово зупиняється.
+     */
+    private void drawPauseMenu(Graphics g) {
+        g.setColor(Color.WHITE);
+
+        String title = "PAUSED";
+        g.setFont(new Font("Arial", Font.BOLD, 48));
+
+        int titleWidth = g.getFontMetrics().stringWidth(title);
+        int titleX = (GameConstants.WINDOW_WIDTH - titleWidth) / 2;
+        int titleY = GameConstants.WINDOW_HEIGHT / 2;
+
+        g.drawString(title, titleX, titleY);
+
+        String continueText = "Press P to continue";
+        g.setFont(new Font("Arial", Font.BOLD, 22));
+
+        int continueWidth = g.getFontMetrics().stringWidth(continueText);
+        int continueX = (GameConstants.WINDOW_WIDTH - continueWidth) / 2;
+        int continueY = titleY + 45;
+
+        g.drawString(continueText, continueX, continueY);
     }
 
     /**
